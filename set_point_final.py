@@ -6,7 +6,7 @@ from std_msgs.msg import String, Float64
 from sensor_msgs.msg import NavSatFix, Image,Imu
 from mavros_msgs.srv import CommandTOL, SetMode, CommandBool
 from mavros_msgs.msg import AttitudeTarget
-from geometry_msgs.msg import PoseStamped, Pose, Point, Twist, TwistStamped
+from geometry_msgs.msg import PoseStamped, Pose, Point, Twist, TwistStamped, Quaternion
 import math
 from time import sleep
 ARM_RAD=1
@@ -15,7 +15,7 @@ class FLIGHT_CONTROLLER:
 
 	def __init__(self):
 		self.pt = Point()
-
+		self.orient = Quaternion()
 		#NODE
 		rospy.init_node('iris_drone', anonymous = True)
 
@@ -132,6 +132,11 @@ class FLIGHT_CONTROLLER:
 		self.pt.y = location_data.pose.position.y
 		self.pt.z = location_data.pose.position.z
 
+		# orientation in space  
+		self.orient.x = location_data.pose.orientation.x
+		self.orient.y = location_data.pose.orientation.y
+		self.orient.z = location_data.pose.orientation.z
+		self.orient.w = location_data.pose.orientation.w
 
 	# def get_vel(self,vel_data):
 	# 	self.x_vel=	vel_data.twist.linear.x
@@ -177,10 +182,14 @@ class FLIGHT_CONTROLLER:
 		sp.pose.position.x = x
 		sp.pose.position.y = y
 		sp.pose.position.z = z
-		sp.pose.orientation.x = 0.0
-		sp.pose.orientation.y = 0.0
-		sp.pose.orientation.z = 0.0
-		sp.pose.orientation.w = 1.0
+		
+		# setting the orientation to the current orientation of the uav
+		sp.pose.orientation.x = self.orient.x
+		sp.pose.orientation.y = self.orient.y
+		sp.pose.orientation.z = self.orient.z
+		sp.pose.orientation.w = self.orient.w
+
+
 		dist = np.sqrt(((self.pt.x-x)**2) + ((self.pt.y-y)**2) + ((self.pt.z-z)**2))
 		while(dist > 0.2):
 			self.publish_pose.publish(sp)
@@ -308,10 +317,11 @@ if __name__ == '__main__':
 		mav.toggle_arm(1)
 		time.sleep(3)
 		mav.set_Guided_mode()
-		mav.takeoff(5)
+		mav.takeoff(5) #cannot takeoff using gotopose
 		time.sleep(10)
-		mav.gotopose(3,3,3)
+		mav.gotopose(1,0,5)
 		time.sleep(8)
+		mav.gotopose(1,2,5)
 		mav.land(3)
 		mav.toggle_arm(0)
 
