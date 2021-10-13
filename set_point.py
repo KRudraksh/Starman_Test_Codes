@@ -10,7 +10,6 @@ from geometry_msgs.msg import PoseStamped, Pose, Point, Twist, TwistStamped, Qua
 import math
 from time import sleep
 ARM_RAD=1
-
 class FLIGHT_CONTROLLER:
 
 	def __init__(self):
@@ -58,6 +57,8 @@ class FLIGHT_CONTROLLER:
 			rospy.loginfo('TAKEOFF')
 		except rospy.ServiceException as e:
 			rospy.loginfo("Service call failed: " %e)
+
+
 	
 	
 	def land(self, l_alt):
@@ -144,10 +145,18 @@ class FLIGHT_CONTROLLER:
 	# 	self.z_vel=	vel_data.twist.linear.z
 		
 	def within_rad(self):
+		# sp = PoseStamped()
+		# # setting the orientation to the current orientation of the uav
+		# sp.pose.orientation.x = self.orient.x
+		# sp.pose.orientation.y = self.orient.y
+		# sp.pose.orientation.z = self.orient.z
+		# sp.pose.orientation.w = self.orient.w
+
 		if (((self.pt.x)**2 + (self.pt.y)**2 + (self.pt.z)**2) < (ARM_RAD)**2):
 			return True
 		print((self.pt.x)**2 + (self.pt.y)**2 + (self.pt.z)**2)
 		return False
+
 
 
 
@@ -170,8 +179,6 @@ class FLIGHT_CONTROLLER:
 	# 	t4 = +1.0 - 2.0 * (y * y + z * z)
 	# 	self.yaw= math.atan2(t3, t4)
 
-		
-
 
 
 
@@ -182,12 +189,16 @@ class FLIGHT_CONTROLLER:
 		sp.pose.position.x = x
 		sp.pose.position.y = y
 		sp.pose.position.z = z
-		
-		# setting the orientation to the current orientation of the uav
-		sp.pose.orientation.x = self.orient.x
-		sp.pose.orientation.y = self.orient.y
-		sp.pose.orientation.z = self.orient.z
-		sp.pose.orientation.w = self.orient.w
+
+		ix = self.orient.x
+		iy = self.orient.y
+		iz = self.orient.z
+		iw = self.orient.w
+
+		sp.pose.orientation.x = ix
+		sp.pose.orientation.y = iy
+		sp.pose.orientation.z = iz
+		sp.pose.orientation.w = iw
 
 
 		dist = np.sqrt(((self.pt.x-x)**2) + ((self.pt.y-y)**2) + ((self.pt.z-z)**2))
@@ -317,11 +328,13 @@ if __name__ == '__main__':
 		mav.toggle_arm(1)
 		time.sleep(3)
 		mav.set_Guided_mode()
-		mav.takeoff(5) #cannot takeoff using gotopose
+		mav.takeoff(2) #cannot takeoff using gotopose
 		time.sleep(10)
-		mav.gotopose(1,0,5)
-		time.sleep(8)
-		mav.gotopose(1,2,5)
-		mav.land(3)
+		mav.gotopose(1,0,2)
+		time.sleep(3)
+		mav.gotopose(1,2,2)
+		time.sleep(5)
+		mav.land(2)
+		time.sleep(7)		
 		mav.toggle_arm(0)
 
