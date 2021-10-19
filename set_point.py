@@ -35,6 +35,10 @@ class FLIGHT_CONTROLLER:
 
 		rospy.loginfo('INIT')
 
+		self.pt.x = 2
+		self.pt.y = 2
+		self.pt.z = 2
+
 	#MODE SETUP
 
 	def toggle_arm(self, arm_bool):
@@ -202,9 +206,11 @@ class FLIGHT_CONTROLLER:
 
 
 		dist = np.sqrt(((self.pt.x-x)**2) + ((self.pt.y-y)**2) + ((self.pt.z-z)**2))
-		while(dist > 0.2):
+		i = 0
+		while(i < 40):
 			self.publish_pose.publish(sp)
-			dist = np.sqrt(((self.pt.x-x)**2) + ((self.pt.y-y)**2) + ((self.pt.z-z)**2))
+			#dist = np.sqrt(((self.pt.x-x)**2) + ((self.pt.y-y)**2) + ((self.pt.z-z)**2))
+			i = i+1
 			rate.sleep()
 		#print('Reached ',x,y,z)
 
@@ -255,7 +261,8 @@ class FLIGHT_CONTROLLER:
 
 	# 	#print('\n',self.roll, self.pitch, self.yaw)
 	# 	#print(self.x_vel,self.y_vel,self.z_vel)
-		
+
+
 	# 	sleep(2)
 	# 	self.set_waypoints(x2,y2,z2)
 	# 	self.set_pose()
@@ -329,12 +336,14 @@ if __name__ == '__main__':
 		time.sleep(3)
 		mav.set_Guided_mode()
 		mav.takeoff(2) #cannot takeoff using gotopose
+		print("take-off successfull")
 		time.sleep(10)
 		mav.gotopose(1,0,2)
+		print("gotopose 1 done!")
 		time.sleep(3)
 		mav.gotopose(1,2,2)
+		print("gotopose 2 done!")
 		time.sleep(5)
-		mav.land(2)
-		time.sleep(7)		
+		mav.land(2)		
 		mav.toggle_arm(0)
 
