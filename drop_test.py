@@ -355,7 +355,10 @@ if __name__ == '__main__':
 			zin = mav.pt.z
 	print('Drop Complete')
 	mav.set_Guided_mode()
-	mav.gotopose(2,2,2)
+	mav.gotopose(0,0,4)
+	time.sleep(5)
+	mav.land(5)
+	mav.toggle_arm(0)
 
 
 
