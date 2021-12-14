@@ -11,12 +11,8 @@ import math
 from time import sleep
 from tf.transformations import euler_from_quaternion
 ARM_RAD=1
+N_laps = 2
 
-#Variables
-d_s = 10 #start distance
-d_p = 20 #pilon distance
-d = 2 #drone width
-v_d = 20 #max velocity
 
 
 class stateMoniter:
@@ -311,6 +307,7 @@ if __name__ == '__main__':
 		wayp_21 = wpMissionCnt()
 		wayp_22 = wpMissionCnt()
 		wayp_23 = wpMissionCnt()
+		wayp_land = wpMissionCnt()
 
 		# defining the origin as the gps coordinates of the spawn point
 		origin = [mav.gps.x, mav.gps.y, 0]
@@ -322,51 +319,41 @@ if __name__ == '__main__':
 		wayp21 = [0,10,5]
 		wayp22 = [-5,5,5]
 		wayp23 = [0,0,5]
+		waypoints = [wayp11,wayp12,wayp13,wayp21,wayp22,wayp23]
+		transformed_waypoints = []
 		# the coordinates are received in ardupilot frame (x- right, y- front)
 
 		# converting the ardupilot frame coordinates to gazebo frame coordinates
-		wayp11 = mav.corrected_pose(wayp11)
-		wayp12 = mav.corrected_pose(wayp12)
-		wayp13 = mav.corrected_pose(wayp13)
-		wayp21 = mav.corrected_pose(wayp21)
-		wayp22 = mav.corrected_pose(wayp22)
-		wayp23 = mav.corrected_pose(wayp23)
-		
-		
-		# rotate changes the axes to the current heading direction
-		wayp11 = mav.rotate(wayp11)
-		wayp12 = mav.rotate(wayp12)
-		wayp13 = mav.rotate(wayp13)
-		wayp21 = mav.rotate(wayp21)
-		wayp22 = mav.rotate(wayp22)
-		wayp23 = mav.rotate(wayp23)
-		# compensated the spawn orientation
+		for waypoint in waypoints:
+			waypoint = mav.corrected_pose(waypoint)
+			waypoint = mav.rotate(waypoint)
+			waypoint = xy2latlon(waypoint, origin)
+			transformed_waypoints.append(waypoint)
 
-		# extracting latitude and longitude from given x,y,z coordinates 
-		wp_g_11 = xy2latlon(wayp11, origin)
-		wp_g_12 = xy2latlon(wayp12, origin)
-		wp_g_13 = xy2latlon(wayp13, origin)
-		wp_g_21 = xy2latlon(wayp21, origin)
-		wp_g_22 = xy2latlon(wayp22, origin)
-		wp_g_23 = xy2latlon(wayp23, origin)
-		
 
 		wps = []
-		w = wayp_11.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),wp_g_11[0], wp_g_11[1], wp_g_11[2])
-		# appending twice to avoid the skipping of first waypoint
-		wps.append(w)
-		wps.append(w)
-		w = wayp_12.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),wp_g_12[0], wp_g_12[1], wp_g_12[2])
-		wps.append(w)
-		w = wayp_13.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),wp_g_13[0], wp_g_13[1], wp_g_13[2])
-		wps.append(w)
-		w = wayp_21.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),wp_g_21[0], wp_g_21[1], wp_g_21[2])
-		wps.append(w)
-		w = wayp_22.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),wp_g_22[0], wp_g_22[1], wp_g_22[2])
-		wps.append(w)
-		w = wayp_23.setWaypoints(3,21,False,True,0.0,0.0,0.0,float('nan'),wp_g_23[0], wp_g_23[1], wp_g_23[2])
-		wps.append(w)
+		w_1 = wayp_11.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[0][0],transformed_waypoints[0][1],transformed_waypoints[0][2])
+		w_2 = wayp_12.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[1][0],transformed_waypoints[1][1],transformed_waypoints[1][2])
+		w_3 = wayp_13.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[2][0],transformed_waypoints[2][1],transformed_waypoints[2][2])
+		w_4 = wayp_21.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[3][0],transformed_waypoints[3][1],transformed_waypoints[3][2])
+		w_5 = wayp_22.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[4][0],transformed_waypoints[4][1],transformed_waypoints[4][2])
+		w_6 = wayp_23.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[5][0],transformed_waypoints[5][1],transformed_waypoints[5][2])
+		w_land = wayp_land.setWaypoints(3,21,False,True,0.0,0.0,0.0,float('nan'),transformed_waypoints[5][0],transformed_waypoints[5][1],transformed_waypoints[5][2])
+		
+		wps.append(w_1)
+
+		for i in range(N_laps):
+			wps.append(w_1)
+			wps.append(w_2)
+			wps.append(w_3)
+			wps.append(w_4)
+			wps.append(w_5)
+			if i == (N_laps-1):
+				wps.append(w_land)
+			else:
+				wps.append(w_6)
 		mav.wpPush(wps)
+		print(wps)
 	
 		# 16 -> NAVIGATE
 		# 21 -> LAND
