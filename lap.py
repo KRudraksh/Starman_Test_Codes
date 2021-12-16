@@ -11,7 +11,7 @@ import math
 from time import sleep
 from tf.transformations import euler_from_quaternion
 ARM_RAD=1
-N_laps = 2
+N_laps = 8
 
 
 
@@ -313,12 +313,12 @@ if __name__ == '__main__':
 		origin = [mav.gps.x, mav.gps.y, 0]
 		
 		# coordinates given in the gazebo frame (x-front, y- left)
-		wayp11 = [50,0,5]
-		wayp12 = [55,5,5]
-		wayp13 = [50,10,5]
-		wayp21 = [0,10,5]
+		wayp11 = [203,0,5]
+		wayp12 = [205,5,5]
+		wayp13 = [203,10,5]
+		wayp21 = [-3,10,5]
 		wayp22 = [-5,5,5]
-		wayp23 = [0,0,5]
+		wayp23 = [-3,0,5]
 		waypoints = [wayp11,wayp12,wayp13,wayp21,wayp22,wayp23]
 		transformed_waypoints = []
 		# the coordinates are received in ardupilot frame (x- right, y- front)
@@ -344,16 +344,15 @@ if __name__ == '__main__':
 
 		for i in range(N_laps):
 			wps.append(w_1)
-			wps.append(w_2)
+			#wps.append(w_2)
 			wps.append(w_3)
 			wps.append(w_4)
-			wps.append(w_5)
+			#wps.append(w_5)
 			if i == (N_laps-1):
 				wps.append(w_land)
 			else:
 				wps.append(w_6)
 		mav.wpPush(wps)
-		print(wps)
 	
 		# 16 -> NAVIGATE
 		# 21 -> LAND
@@ -364,7 +363,7 @@ if __name__ == '__main__':
 		time.sleep(3)
 		mav.set_Guided_mode()
 		mav.takeoff(5)
-		time.sleep(7)
+		time.sleep(5)
 		mav.set_Guided_mode()
 		mav.set_mode("AUTO")	
 		mav.toggle_arm(0)
