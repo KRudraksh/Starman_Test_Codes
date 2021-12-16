@@ -3,7 +3,7 @@ import numpy as np
 import rospy
 import time
 from std_msgs.msg import String, Float64
-from sensor_msgs.msg import NavSatFix, Image,Imu
+from sensor_msgs.msg import NavSatFix, Image,Imu, Range
 from mavros_msgs.srv import CommandTOL, SetMode, CommandBool
 from mavros_msgs.msg import AttitudeTarget, OverrideRCIn
 from geometry_msgs.msg import PoseStamped, Pose, Point, Twist, TwistStamped
@@ -16,6 +16,7 @@ class FLIGHT_CONTROLLER:
 	def __init__(self):
 		self.pt = Point()
 		self.vel = Point()
+		self.alt = Range()
 		#NODE
 		rospy.init_node('new', anonymous = True)
 
@@ -24,6 +25,7 @@ class FLIGHT_CONTROLLER:
 		self.get_linear_vel=rospy.Subscriber('/mavros/local_position/velocity_local', TwistStamped,self.get_velocity)
 		self.get_imu=rospy.Subscriber("/mavros/imu/data", Imu, self.imu_call)
 		# self.get_imu_data=rospy.Subscriber('/mavros/imu/data',Imu,self.get_euler_angles)
+		rospy.Subscriber('/mavros/rangefinder/rangefinder', Range, self.rangefinder )
 
 		#PUBLISHERS
 		self.publish_pose = rospy.Publisher('/mavros/setpoint_position/local', PoseStamped,queue_size=10)
@@ -166,6 +168,8 @@ class FLIGHT_CONTROLLER:
 			self.publish_overriderc.publish(rc)
 			i=i+1
 
+	def rangefinder(self, data):
+		self.alt.range = data.range
 
 
 
@@ -235,14 +239,15 @@ if __name__ == '__main__':
 		print('start drop')
 		mav.set_mode('ALT_HOLD')
 		# time.sleep(10)
-		zo = mav.pt.z
-		zin = mav.pt.z
-		drop=False
+		zo = mav.alt.range
+		zin = mav.alt.range
+		print(zo)
+		drop = False
 		rc_t.channels[2]=1400
 		mav.publish_overriderc.publish(rc_t)
 		while(True):
 			if(0<mav.z2<1):
-				rc_t.channels[2]=1700
+				rc_t.channels[2]=1400
 				mav.publish_overriderc.publish(rc_t)
 				drop = True
 
@@ -254,7 +259,7 @@ if __name__ == '__main__':
 				mav.publish_overriderc.publish(rc_t)
 
 				break
-			zin = mav.pt.z
+			zin = mav.alt.range
 	print('Drop Complete')
 	mav.set_Guided_mode()
 	mav.gotopose(2,2,2)
