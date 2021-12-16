@@ -252,9 +252,6 @@ if __name__ == '__main__':
 				drop = True
 
 			if(zin-zo < -1 and drop):
-				rc_t.channels[2]=1700
-				mav.publish_overriderc.publish(rc_t)
-				time.sleep(1)
 				rc_t.channels[2]=1500
 				mav.publish_overriderc.publish(rc_t)
 
