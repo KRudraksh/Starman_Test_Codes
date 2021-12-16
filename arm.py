@@ -5,7 +5,7 @@ import time
 from std_msgs.msg import String, Float64
 from sensor_msgs.msg import NavSatFix, Image,Imu
 from mavros_msgs.srv import CommandTOL, SetMode, CommandBool
-from mavros_msgs.msg import AttitudeTarget, OverrideRCIn
+from mavros_msgs.msg import AttitudeTarget
 from geometry_msgs.msg import PoseStamped, Pose, Point, Twist, TwistStamped
 import math
 from time import sleep
@@ -15,20 +15,18 @@ class FLIGHT_CONTROLLER:
 
 	def __init__(self):
 		self.pt = Point()
-		self.vel = Point()
+
 		#NODE
-		rospy.init_node('new', anonymous = True)
+		rospy.init_node('iris_drone', anonymous = True)
 
 		#SUBSCRIBERS
 		self.get_pose_subscriber = rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.get_pose)
-		self.get_linear_vel=rospy.Subscriber('/mavros/local_position/velocity_local', TwistStamped,self.get_velocity)
-		self.get_imu=rospy.Subscriber("/mavros/imu/data", Imu, self.imu_call)
+		# self.get_linear_vel=rospy.Subscriber('/mavros/local_position/velocity_local', TwistStamped, self.get_vel,)
 		# self.get_imu_data=rospy.Subscriber('/mavros/imu/data',Imu,self.get_euler_angles)
 
 		#PUBLISHERS
 		self.publish_pose = rospy.Publisher('/mavros/setpoint_position/local', PoseStamped,queue_size=10)
 		self.publish_attitude_thrust=rospy.Publisher('/mavros/setpoint_raw/attitude', AttitudeTarget,queue_size=0)
-		self.publish_overriderc=rospy.Publisher('/mavros/rc/override', OverrideRCIn,  queue_size=10)
 
 		#SERVICES
 		self.arm_service = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
@@ -39,12 +37,6 @@ class FLIGHT_CONTROLLER:
 		rospy.loginfo('INIT')
 
 	#MODE SETUP
-
-	def get_velocity(self,data):
-		self.vel.x = data.twist.linear.x
-		self.vel.y = data.twist.linear.y
-		self.vel.z = data.twist.linear.z
-
 
 	def toggle_arm(self, arm_bool):
 		rospy.wait_for_service('/mavros/cmd/arming')
@@ -140,9 +132,6 @@ class FLIGHT_CONTROLLER:
 		self.pt.y = location_data.pose.position.y
 		self.pt.z = location_data.pose.position.z
 
-	def imu_call(self, imu_val):
-		self.z2 = imu_val.linear_acceleration.z
-
 
 	# def get_vel(self,vel_data):
 	# 	self.x_vel=	vel_data.twist.linear.x
@@ -156,16 +145,27 @@ class FLIGHT_CONTROLLER:
 		return False
 
 
-	def set_throttle(self,t):
-		print("Setting Thottle ")
-		rate = rospy.Rate(20)
-		rc = OverrideRCIn()
-		rc.channels[2]=t
-		i = 0
-		for i in range (100):
-			self.publish_overriderc.publish(rc)
-			i=i+1
 
+	# def get_euler_angles(self,orientaion_data):
+	# 	x=orientaion_data.orientation.x
+	# 	y=orientaion_data.orientation.y
+	# 	z=orientaion_data.orientation.z
+	# 	w=orientaion_data.orientation.w
+
+	# 	t0 = +2.0 * (w * x + y * z)
+	# 	t1 = +1.0 - 2.0 * (x * x + y * y)
+	# 	self.roll = math.atan2(t0, t1)
+
+	# 	t2 = +2.0 * (w * y - z * x)
+	# 	t2 = +1.0 if t2 > +1.0 else t2
+	# 	t2 = -1.0 if t2 < -1.0 else t2
+	# 	self.pitch = math.asin(t2)
+
+	# 	t3 = +2.0 * (w * z + x * y)
+	# 	t4 = +1.0 - 2.0 * (y * y + z * z)
+	# 	self.yaw= math.atan2(t3, t4)
+
+		
 
 
 
@@ -220,47 +220,93 @@ class FLIGHT_CONTROLLER:
 		
 
 
+		
+
+	# def move_to(self,x2,y2,z2):
+
+		
+	# 	a=self.curr_x
+	# 	b=self.curr_y
+	# 	c=self.curr_z
+	# 	self.set_waypoints((x2+a)/2,(y2+b)/2,(z2+c)/2)
+	# 	self.set_pose()
+	# 	self.set_waypoints(x2,y2,z2)
+	# 	self.set_pose()
+
+	# 	#print('\n',self.roll, self.pitch, self.yaw)
+	# 	#print(self.x_vel,self.y_vel,self.z_vel)
+		
+	# 	sleep(2)
+	# 	self.set_waypoints(x2,y2,z2)
+	# 	self.set_pose()
+
+		#print('\n',self.roll, self.pitch, self.yaw)
+		#print(self.x_vel,self.y_vel,self.z_vel)
+
+
+
+	# #MISSION CONTself.roll
+	# def set_waypoints(self, temp_x, temp_y, temp_z):
+
+	# 	self.set_x = temp_x
+	# 	self.set_y = temp_y
+	# 	self.set_z = temp_z
+
+
+
+	def test_control(self):
+		print('Starting')
+		rate = rospy.Rate(20)
+		sr = AttitudeTarget()
+		sr.type_mask = 134
+		sr.body_rate.x = 0.0
+		sr.body_rate.y = 0.0
+		sr.body_rate.z = 0.0
+		sr.thrust = 1
+		for i in range(60):
+			print('stg 1')
+			self.publish_attitude_thrust.publish(sr)
+			rate.sleep()
+		print('Stage 1 done')
+		# sr.type_mask = 135
+		# sr.thrust = 0.5
+		# for i in range(100):
+		# 	print('stg 1.5')
+		# 	self.publish_attitude_thrust.publish(sr)
+		# 	rate.sleep()
+		# print('Stage 1.5 done')
+		# sr.type_mask = 134
+		# sr.body_rate.x = 1500.0
+		# sr.body_rate.y = 0.0
+		# sr.body_rate.z = 0.0
+		# sr.thrust = 0.5
+		# for i in range(20):
+		# 	print('stg 2')
+		# 	self.publish_attitude_thrust.publish(sr)
+		# 	rate.sleep()
+		# print('Stage 2 done')
+		# sr.type_mask = 134
+		# sr.body_rate.x = -1500.0
+		# sr.body_rate.y = 0.0
+		# sr.body_rate.z = 0.0
+		# sr.thrust = 0.5
+		# for i in range(5):
+		# 	print('final')
+		# 	self.publish_attitude_thrust.publish(sr)
+		# 	rate.sleep()
+		# print('Roll Complete!!')		
+
+
+
 if __name__ == '__main__':
 
 	mav = FLIGHT_CONTROLLER()
-	rate = rospy.Rate(50)
 	time.sleep(3)
 	print(mav.within_rad())
-
 	if (mav.within_rad()):
 		mav.set_mode('STABILIZE')
 		mav.toggle_arm(1)
-
-		rc_t = OverrideRCIn()
-		print('start drop')
-		mav.set_mode('ALT_HOLD')
-		# time.sleep(10)
-		zo = mav.pt.z
-		zin = mav.pt.z
-		drop=False
-		rc_t.channels[2]=1400
-		mav.publish_overriderc.publish(rc_t)
-		while(True):
-			if(0<mav.z2<1):
-				rc_t.channels[2]=1700
-				mav.publish_overriderc.publish(rc_t)
-				drop = True
-
-			if(zin-zo < -1 and drop):
-				rc_t.channels[2]=1700
-				mav.publish_overriderc.publish(rc_t)
-				time.sleep(1)
-				rc_t.channels[2]=1500
-				mav.publish_overriderc.publish(rc_t)
-
-				break
-			zin = mav.pt.z
-	print('Drop Complete')
-	mav.set_Guided_mode()
-	mav.gotopose(2,2,2)
-	time.sleep(5)
-	mav.land(5)
-	mav.toggle_arm(0)
-
-
+		time.sleep(5)
+		mav.set_Guided_mode()
+		mav.toggle_arm(0)
 
